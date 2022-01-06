@@ -44,8 +44,8 @@ impl MandelbrotSet {
         let x_ratio = width as f64 / self.width as f64;
         let y_ratio = height as f64 / self.height as f64;
 
-        let x_range = self.x_scale_max - self.x_scale_min;
-        let y_range = self.y_scale_max - self.y_scale_min;
+        let x_range = (self.x_scale_max - self.x_scale_min).abs();
+        let y_range = (self.y_scale_max - self.y_scale_min).abs();
 
         let new_x_range_diff = (x_ratio * x_range) - x_range;
         let new_y_range_diff = (y_ratio * y_range) - y_range;
@@ -90,8 +90,6 @@ impl MandelbrotSet {
                 historgram[*val as usize] += 1;
                 total += *val;
             }
-
-
         }
 
         for (i, pixel) in self.frame_buffer.chunks_exact_mut(4).enumerate() {
