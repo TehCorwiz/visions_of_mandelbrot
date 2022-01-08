@@ -40,6 +40,7 @@ impl MandelbrotSet {
     // Adjusts the x and y scale values such that the scale of the image remains constant
     //  regardless of resolution. This has the effect of expanding the canvas when increasing the
     //  window size and zooming in when narrowing the window size.
+    // TODO: Consider adding the option to only adjust the aspect ratio.
     fn resize_scaling_factors(&mut self, width: usize, height: usize) {
         let x_ratio = width as f64 / self.width as f64;
         let y_ratio = height as f64 / self.height as f64;
@@ -66,11 +67,31 @@ impl MandelbrotSet {
         self.redraw = true;
     }
 
+    /// Assumes the default texture format: `wgpu::TextureFormat::Rgba8UnormSrgb`
+    pub(crate) fn draw(&mut self, frame: &mut [u8]) {
+        if self.redraw && !self.drawing {
+            self.redraw = false;
+
+            self.draw_to_frame_buffer();
+        }
+
+        frame.copy_from_slice(&self.frame_buffer);
+    }
+
+    // The problem I'm going to have is that at higher zoom levels the x and y scale values will get
+    //  too small. I'll effectively hit the float resolution limit. Maybe use a library to provide
+    //  arbitrary resolution numbers?
     fn draw_to_frame_buffer(&mut self) {
         self.drawing = true;
 
+        // Counts the number of iterations in each pixel location.
         let mut iteration_counts: Vec<Vec<u32>> = vec![vec![0; self.width]; self.height];
+        // Counts the frequency of each iteration count.
+        //  Iteration counts range from 1 to `self.max_iterations` and it's simpler to just have a
+        //  +1 sized array than If we initialized it with just self.max_iterations and had to
+        //  perform a -1 offset to query from the zero-indexed array (0..self.max_iterations - 1).
         let mut historgram: Vec<u32> = vec![0; (self.max_iterations + 1) as usize];
+        // Counts the total iterations
         let mut total: u32 = 0;
 
         for (y, row) in iteration_counts.iter_mut().enumerate() {
@@ -88,9 +109,10 @@ impl MandelbrotSet {
                 );
 
                 historgram[*val as usize] += 1;
-                total += *val;
             }
         }
+
+        total = historgram.iter().sum();
 
         for (i, pixel) in self.frame_buffer.chunks_exact_mut(4).enumerate() {
             let x = i % self.width as usize;
@@ -101,17 +123,6 @@ impl MandelbrotSet {
         }
 
         self.drawing = false;
-    }
-
-    /// Assumes the default texture format: `wgpu::TextureFormat::Rgba8UnormSrgb`
-    pub(crate) fn draw(&mut self, frame: &mut [u8]) {
-        if self.redraw && !self.drawing {
-            self.redraw = false;
-
-            self.draw_to_frame_buffer();
-        }
-
-        frame.copy_from_slice(&self.frame_buffer);
     }
 
     fn pixel_color(iterations: u32, max_iterations: u32) -> [u8; 4] {
