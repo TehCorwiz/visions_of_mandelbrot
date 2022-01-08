@@ -118,19 +118,25 @@ impl MandelbrotSet {
             let x = i % self.width as usize;
             let y = i / self.width as usize;
 
-            let rgba = MandelbrotSet::pixel_color(iteration_counts[y][x], self.max_iterations);
+            let rgba: [u8; 4] = if iteration_counts[y][x] == self.max_iterations {
+                [0, 0, 0, 0xff]
+            } else {
+                let mut shade: f64 = 0.0;
+
+                // histogram[0] is always = 0;
+                for n in 1..iteration_counts[y][x] {
+                    shade += historgram[n as usize] as f64 / total as f64;
+                }
+
+                let grey_val: u8 = (shade * 0xff as f64) as u8;
+
+                [grey_val, grey_val, grey_val, 0xff]
+            };
+
             pixel.copy_from_slice(&rgba);
         }
 
         self.drawing = false;
-    }
-
-    fn pixel_color(iterations: u32, max_iterations: u32) -> [u8; 4] {
-        return if iterations == max_iterations {
-            [0xff, 0xff, 0xff, 0xff]
-        } else {
-            [0x0, 0x0, 0x0, 0xff]
-        };
     }
 
     // Returns the number of iterations to diverge.

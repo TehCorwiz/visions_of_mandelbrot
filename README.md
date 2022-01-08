@@ -9,6 +9,14 @@ avoid writing boilerplate. I'm using the Wikipedia
 article [Plotting algorithms for the Mandelbrot set](https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set)
 as my main reference for implementation hints and optimization strategies.
 
+## TODO:
+- [X] Basic bulb
+- [ ] Color
+- [ ] Zoom
+- [ ] Retargeting
+- [ ] Split render from screen drawing
+- [ ] UI
+
 ## Dev env setup
 
 1. Install Rust + Cargo.
