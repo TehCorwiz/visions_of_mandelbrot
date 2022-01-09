@@ -14,7 +14,7 @@ pub(crate) struct MandelbrotSet {
     y_scale_min: f64,
     y_scale_max: f64,
     frame_buffer: Vec<u8>,
-    palette: Vec<LinSrgb>,
+    palette: Vec<[u8; 4]>,
     redraw: bool,
     drawing: bool,
 }
@@ -135,14 +135,7 @@ impl MandelbrotSet {
                     shade += historgram[n as usize] as f64 / total as f64;
                 }
 
-                let color = self.palette[(shade * self.palette.len() as f64) as usize];
-
-                [
-                    (color.red * 0xff as f32) as u8,
-                    (color.green * 0xff as f32) as u8,
-                    (color.blue * 0xff as f32) as u8,
-                    0xff
-                ]
+                self.palette[(shade * self.palette.len() as f64) as usize]
             };
 
             pixel.copy_from_slice(&rgba);
@@ -151,14 +144,26 @@ impl MandelbrotSet {
         self.drawing = false;
     }
 
-    fn generate_palette() -> Vec<LinSrgb> {
+    fn generate_palette() -> Vec<[u8; 4]> {
         let mut rng = rand::thread_rng();
 
-        Gradient::from([
+        let gradient: Vec<LinSrgb> = Gradient::from([
             (0.0, LinSrgb::new(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0))),
             (0.5, LinSrgb::new(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0))),
             (1.0, LinSrgb::new(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0))),
-        ]).take(256).collect()
+        ]).take(256).collect();
+
+        let mut palette = vec![[0; 4]; 256];
+        for (i, color) in gradient.iter().enumerate() {
+            palette[i] = [
+                (color.red * 0xff as f32) as u8,
+                (color.green * 0xff as f32) as u8,
+                (color.blue * 0xff as f32) as u8,
+                0xff
+            ]
+        }
+
+        palette
     }
 
     // Returns the number of iterations to diverge.
