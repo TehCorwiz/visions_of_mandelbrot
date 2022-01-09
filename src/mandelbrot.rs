@@ -1,3 +1,6 @@
+use rand::Rng;
+use palette::{LinSrgb, Gradient};
+
 fn normalize(n: f64, r_min: f64, r_max: f64, t_min: f64, t_max: f64) -> f64 {
     (((n - r_min) / (r_max - r_min)) * (t_max - t_min)) + t_min
 }
@@ -11,6 +14,7 @@ pub(crate) struct MandelbrotSet {
     y_scale_min: f64,
     y_scale_max: f64,
     frame_buffer: Vec<u8>,
+    palette: Vec<LinSrgb>,
     redraw: bool,
     drawing: bool,
 }
@@ -18,6 +22,7 @@ pub(crate) struct MandelbrotSet {
 impl MandelbrotSet {
     pub(crate) fn new(width: usize, height: usize) -> MandelbrotSet {
         let frame_buffer = vec![0xff as u8; width * height * 4];
+        let palette = MandelbrotSet::generate_palette();
 
         Self {
             width,
@@ -28,6 +33,7 @@ impl MandelbrotSet {
             y_scale_min: -1.12,
             y_scale_max: 1.12,
             frame_buffer,
+            palette,
             redraw: true,
             drawing: false,
         }
@@ -124,19 +130,35 @@ impl MandelbrotSet {
                 let mut shade: f64 = 0.0;
 
                 // histogram[0] is always = 0;
+                assert!(historgram.len() >= iteration_counts[y][x] as usize);
                 for n in 1..iteration_counts[y][x] {
                     shade += historgram[n as usize] as f64 / total as f64;
                 }
 
-                let grey_val: u8 = (shade * 0xff as f64) as u8;
+                let color = self.palette[(shade * self.palette.len() as f64) as usize];
 
-                [grey_val, grey_val, grey_val, 0xff]
+                [
+                    (color.red * 0xff as f32) as u8,
+                    (color.green * 0xff as f32) as u8,
+                    (color.blue * 0xff as f32) as u8,
+                    0xff
+                ]
             };
 
             pixel.copy_from_slice(&rgba);
         }
 
         self.drawing = false;
+    }
+
+    fn generate_palette() -> Vec<LinSrgb> {
+        let mut rng = rand::thread_rng();
+
+        Gradient::from([
+            (0.0, LinSrgb::new(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0))),
+            (0.5, LinSrgb::new(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0))),
+            (1.0, LinSrgb::new(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0))),
+        ]).take(256).collect()
     }
 
     // Returns the number of iterations to diverge.

@@ -14,6 +14,8 @@ pixels = "0.9.0"
 wgpu = "0.12"
 winit = "0.26"
 winit_input_helper = "0.11"
+palette = "0.6"
+rand = "0.8.4"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1"

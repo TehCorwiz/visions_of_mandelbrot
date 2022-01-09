@@ -11,11 +11,12 @@ as my main reference for implementation hints and optimization strategies.
 
 ## TODO:
 - [X] Basic bulb
-- [ ] Color
+- [X] Color
 - [ ] Zoom
 - [ ] Retargeting
 - [ ] Split render from screen drawing
 - [ ] UI
+- [ ] Preset or custom palettes
 
 ## Dev env setup
 
