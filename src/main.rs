@@ -122,14 +122,20 @@ async fn run() {
             if input.key_pressed(VirtualKeyCode::Escape) || input.quit() {
                 *control_flow = ControlFlow::Exit;
                 return;
-            } else if input.mouse_pressed(0) {
+            }
+
+            // Zoom events
+            if input.mouse_pressed(0) {
                 // Left mouse
                 mandelbrot_set.zoom(input.mouse().unwrap(), 0.5);
-                dbg!("{}", input.mouse());
             } else if input.mouse_pressed(1) {
                 // Right mouse
                 mandelbrot_set.zoom(input.mouse().unwrap(), 2.0);
-                dbg!("{}", input.mouse());
+            }
+
+            // Palette events
+            if input.key_pressed(VirtualKeyCode::P) {
+                mandelbrot_set.randomize_palette();
             }
 
             // Resize the window

@@ -21,9 +21,6 @@ pub(crate) struct MandelbrotSet {
 
 impl MandelbrotSet {
     pub(crate) fn new(width: usize, height: usize) -> MandelbrotSet {
-        let frame_buffer = vec![0xff as u8; width * height * 4];
-        let palette = MandelbrotSet::generate_palette();
-
         Self {
             width,
             height,
@@ -32,8 +29,8 @@ impl MandelbrotSet {
             x_scale_max: 0.47,
             y_scale_min: -1.12,
             y_scale_max: 1.12,
-            frame_buffer,
-            palette,
+            frame_buffer: vec![0xff as u8; width * height * 4],
+            palette: MandelbrotSet::random_palette(),
             redraw: true,
             drawing: false,
         }
@@ -41,6 +38,11 @@ impl MandelbrotSet {
 
     pub(crate) fn update(&mut self) {
         // TODO: Interactivity
+    }
+
+    pub(crate) fn randomize_palette(&mut self) {
+        self.palette = MandelbrotSet::random_palette();
+        self.redraw = true;
     }
 
     fn x_range(&self) -> f64 {
@@ -182,7 +184,7 @@ impl MandelbrotSet {
         self.drawing = false;
     }
 
-    fn generate_palette() -> Vec<[u8; 4]> {
+    fn random_palette() -> Vec<[u8; 4]> {
         let mut rng = rand::thread_rng();
 
         let gradient: Vec<LinSrgb> = Gradient::from([
@@ -210,9 +212,7 @@ impl MandelbrotSet {
                     rng.gen_range(0.0..1.0),
                 ),
             ),
-        ])
-        .take(256)
-        .collect();
+        ]).take(256).collect();
 
         let mut palette = vec![[0; 4]; 256];
         for (i, color) in gradient.iter().enumerate() {

@@ -9,6 +9,14 @@ avoid writing boilerplate. I'm using the Wikipedia
 article [Plotting algorithms for the Mandelbrot set](https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set)
 as my main reference for implementation hints and optimization strategies.
 
+![](images/visions_of_mandelbrot.png)
+
+## Controls
+
+- Zoom in: `Left mouse click`
+- Zoom out: `Right mouse click`
+- Randomize color palatte: `P`
+
 ## TODO:
 - [X] Basic bulb
 - [X] Color
