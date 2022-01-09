@@ -4,7 +4,7 @@
 mod mandelbrot;
 
 use log::error;
-use pixels::{Pixels, SurfaceTexture};
+use pixels::{Pixels, PixelsBuilder, SurfaceTexture};
 use std::rc::Rc;
 use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
@@ -94,7 +94,9 @@ async fn run() {
         let window_size = window.inner_size();
         let surface_texture =
             SurfaceTexture::new(window_size.width, window_size.height, window.as_ref());
-        Pixels::new_async(WIDTH, HEIGHT, surface_texture)
+        PixelsBuilder::new(WIDTH, HEIGHT, surface_texture)
+            .enable_vsync(true)
+            .build_async()
             .await
             .expect("Pixels error")
     };
