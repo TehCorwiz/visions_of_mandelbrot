@@ -15,6 +15,7 @@ wgpu = "0.12"
 winit = "0.26"
 winit_input_helper = "0.11"
 palette = "0.6"
+getrandom =  { version = "0.2.3", features = ["js"] }
 rand = "0.8.4"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
