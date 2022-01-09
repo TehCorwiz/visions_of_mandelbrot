@@ -186,10 +186,33 @@ impl MandelbrotSet {
         let mut rng = rand::thread_rng();
 
         let gradient: Vec<LinSrgb> = Gradient::from([
-            (0.0, LinSrgb::new(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0))),
-            (0.5, LinSrgb::new(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0))),
-            (1.0, LinSrgb::new(rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0), rng.gen_range(0.0..1.0))),
-        ]).take(256).collect();
+            (
+                0.0,
+                LinSrgb::new(
+                    rng.gen_range(0.0..1.0),
+                    rng.gen_range(0.0..1.0),
+                    rng.gen_range(0.0..1.0),
+                ),
+            ),
+            (
+                0.5,
+                LinSrgb::new(
+                    rng.gen_range(0.0..1.0),
+                    rng.gen_range(0.0..1.0),
+                    rng.gen_range(0.0..1.0),
+                ),
+            ),
+            (
+                1.0,
+                LinSrgb::new(
+                    rng.gen_range(0.0..1.0),
+                    rng.gen_range(0.0..1.0),
+                    rng.gen_range(0.0..1.0),
+                ),
+            ),
+        ])
+        .take(256)
+        .collect();
 
         let mut palette = vec![[0; 4]; 256];
         for (i, color) in gradient.iter().enumerate() {
