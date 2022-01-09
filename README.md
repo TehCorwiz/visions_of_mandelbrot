@@ -12,7 +12,7 @@ as my main reference for implementation hints and optimization strategies.
 ## TODO:
 - [X] Basic bulb
 - [X] Color
-- [ ] Zoom
+- [X] Zoom
 - [X] Retargeting
 - [ ] Split render from screen drawing
 - [ ] UI

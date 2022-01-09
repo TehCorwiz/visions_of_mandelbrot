@@ -1,5 +1,5 @@
+use palette::{Gradient, LinSrgb};
 use rand::Rng;
-use palette::{LinSrgb, Gradient};
 
 fn normalize(n: f64, r_min: f64, r_max: f64, t_min: f64, t_max: f64) -> f64 {
     (((n - r_min) / (r_max - r_min)) * (t_max - t_min)) + t_min
@@ -81,12 +81,12 @@ impl MandelbrotSet {
         self.redraw = true;
     }
 
-    pub(crate) fn zoom(&mut self, coords: (f32, f32), _factor: f32) {
+    pub(crate) fn zoom(&mut self, coords: (f32, f32), factor: f64) {
         let x_range = self.x_range();
         let y_range = self.y_range();
 
-        let midpoint_x = x_range / 2.0 + self.x_scale_min;
-        let midpoint_y = y_range / 2.0 + self.y_scale_min;
+        let new_x_range = x_range * factor;
+        let new_y_range = y_range * factor;
 
         let new_midpoint_x = normalize(
             coords.0 as f64,
@@ -103,14 +103,11 @@ impl MandelbrotSet {
             self.y_scale_max,
         );
 
-        let x_midpoint_delta = midpoint_x - new_midpoint_x;
-        let y_midpoint_delta = midpoint_y - new_midpoint_y;
+        self.x_scale_min = new_midpoint_x - (new_x_range / 2.0);
+        self.x_scale_max = new_midpoint_x + (new_x_range / 2.0);
 
-        self.x_scale_min -= x_midpoint_delta;
-        self.x_scale_max -= x_midpoint_delta;
-
-        self.y_scale_min -= y_midpoint_delta;
-        self.y_scale_max -= y_midpoint_delta;
+        self.y_scale_min = new_midpoint_y - (new_y_range / 2.0);
+        self.y_scale_max = new_midpoint_y + (new_y_range / 2.0);
 
         self.redraw = true;
     }
@@ -200,7 +197,7 @@ impl MandelbrotSet {
                 (color.red * 0xff as f32) as u8,
                 (color.green * 0xff as f32) as u8,
                 (color.blue * 0xff as f32) as u8,
-                0xff
+                0xff,
             ]
         }
 
@@ -209,18 +206,17 @@ impl MandelbrotSet {
 
     // Returns the number of iterations to diverge.
     fn test_pixel(
-        px: u32, py: u32,
-        width: usize, height: usize,
+        px: u32,
+        py: u32,
+        width: usize,
+        height: usize,
         max_iterations: u32,
-        x_scale_min: f64, x_scale_max: f64,
-        y_scale_min: f64, y_scale_max: f64) -> u32 {
-        let x0 = normalize(
-            px as f64,
-            0.0,
-            (width - 1) as f64,
-            x_scale_min,
-            x_scale_max,
-        );
+        x_scale_min: f64,
+        x_scale_max: f64,
+        y_scale_min: f64,
+        y_scale_max: f64,
+    ) -> u32 {
+        let x0 = normalize(px as f64, 0.0, (width - 1) as f64, x_scale_min, x_scale_max);
 
         let y0 = normalize(
             py as f64,

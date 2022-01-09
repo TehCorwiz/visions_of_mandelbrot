@@ -3,6 +3,7 @@
 
 mod mandelbrot;
 
+use crate::mandelbrot::MandelbrotSet;
 use log::error;
 use pixels::{PixelsBuilder, SurfaceTexture};
 use std::rc::Rc;
@@ -11,26 +12,25 @@ use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
-use crate::mandelbrot::MandelbrotSet;
 
 const WIDTH: u32 = 640;
 const HEIGHT: u32 = 480;
 
 fn main() {
     #[cfg(target_arch = "wasm32")]
-        {
-            std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-            console_log::init_with_level(log::Level::Trace).expect("error initializing logger");
+    {
+        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+        console_log::init_with_level(log::Level::Trace).expect("error initializing logger");
 
-            wasm_bindgen_futures::spawn_local(run());
-        }
+        wasm_bindgen_futures::spawn_local(run());
+    }
 
     #[cfg(not(target_arch = "wasm32"))]
-        {
-            env_logger::init();
+    {
+        env_logger::init();
 
-            pollster::block_on(run());
-        }
+        pollster::block_on(run());
+    }
 }
 
 async fn run() {
@@ -47,47 +47,47 @@ async fn run() {
     let window = Rc::new(window);
 
     #[cfg(target_arch = "wasm32")]
-        {
-            use wasm_bindgen::JsCast;
-            use winit::platform::web::WindowExtWebSys;
+    {
+        use wasm_bindgen::JsCast;
+        use winit::platform::web::WindowExtWebSys;
 
-            // Retrieve current width and height dimensions of browser client window
-            let get_window_size = || {
-                let client_window = web_sys::window().unwrap();
-                LogicalSize::new(
-                    client_window.inner_width().unwrap().as_f64().unwrap(),
-                    client_window.inner_height().unwrap().as_f64().unwrap(),
-                )
-            };
-
-            let window = Rc::clone(&window);
-
-            // Initialize winit window with current dimensions of browser client
-            window.set_inner_size(get_window_size());
-
+        // Retrieve current width and height dimensions of browser client window
+        let get_window_size = || {
             let client_window = web_sys::window().unwrap();
+            LogicalSize::new(
+                client_window.inner_width().unwrap().as_f64().unwrap(),
+                client_window.inner_height().unwrap().as_f64().unwrap(),
+            )
+        };
 
-            // Attach winit canvas to body element
-            web_sys::window()
-                .and_then(|win| win.document())
-                .and_then(|doc| doc.body())
-                .and_then(|body| {
-                    body.append_child(&web_sys::Element::from(window.canvas()))
-                        .ok()
-                })
-                .expect("couldn't append canvas to document body");
+        let window = Rc::clone(&window);
 
-            // Listen for resize event on browser client. Adjust winit window dimensions
-            // on event trigger
-            let closure = wasm_bindgen::closure::Closure::wrap(Box::new(move |_e: web_sys::Event| {
-                let size = get_window_size();
-                window.set_inner_size(size)
-            }) as Box<dyn FnMut(_)>);
-            client_window
-                .add_event_listener_with_callback("resize", closure.as_ref().unchecked_ref())
-                .unwrap();
-            closure.forget();
-        }
+        // Initialize winit window with current dimensions of browser client
+        window.set_inner_size(get_window_size());
+
+        let client_window = web_sys::window().unwrap();
+
+        // Attach winit canvas to body element
+        web_sys::window()
+            .and_then(|win| win.document())
+            .and_then(|doc| doc.body())
+            .and_then(|body| {
+                body.append_child(&web_sys::Element::from(window.canvas()))
+                    .ok()
+            })
+            .expect("couldn't append canvas to document body");
+
+        // Listen for resize event on browser client. Adjust winit window dimensions
+        // on event trigger
+        let closure = wasm_bindgen::closure::Closure::wrap(Box::new(move |_e: web_sys::Event| {
+            let size = get_window_size();
+            window.set_inner_size(size)
+        }) as Box<dyn FnMut(_)>);
+        client_window
+            .add_event_listener_with_callback("resize", closure.as_ref().unchecked_ref())
+            .unwrap();
+        closure.forget();
+    }
 
     let mut input = WinitInputHelper::new();
     let mut pixels = {
@@ -122,11 +122,13 @@ async fn run() {
             if input.key_pressed(VirtualKeyCode::Escape) || input.quit() {
                 *control_flow = ControlFlow::Exit;
                 return;
-            } else if input.mouse_pressed(0) { // Left mouse
-                mandelbrot_set.zoom(input.mouse().unwrap(), 2.0);
-                dbg!("{}", input.mouse());
-            } else if input.mouse_pressed(1) { // Right mouse
+            } else if input.mouse_pressed(0) {
+                // Left mouse
                 mandelbrot_set.zoom(input.mouse().unwrap(), 0.5);
+                dbg!("{}", input.mouse());
+            } else if input.mouse_pressed(1) {
+                // Right mouse
+                mandelbrot_set.zoom(input.mouse().unwrap(), 2.0);
                 dbg!("{}", input.mouse());
             }
 
@@ -144,4 +146,3 @@ async fn run() {
         }
     });
 }
-
