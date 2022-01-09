@@ -17,6 +17,7 @@
 <script type="module">
     import init from "./visions_of_mandelbrot.js";
 
+    document.addEventListener('contextmenu', event => event.preventDefault());
     window.addEventListener("load", () => {
         init();
     });
