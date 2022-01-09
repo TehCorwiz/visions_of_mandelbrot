@@ -43,6 +43,14 @@ impl MandelbrotSet {
         // TODO: Interactivity
     }
 
+    fn x_range(&self) -> f64 {
+        (self.x_scale_max - self.x_scale_min).abs()
+    }
+
+    fn y_range(&self) -> f64 {
+        (self.y_scale_max - self.y_scale_min).abs()
+    }
+
     // Adjusts the x and y scale values such that the scale of the image remains constant
     //  regardless of resolution. This has the effect of expanding the canvas when increasing the
     //  window size and zooming in when narrowing the window size.
@@ -51,8 +59,8 @@ impl MandelbrotSet {
         let x_ratio = width as f64 / self.width as f64;
         let y_ratio = height as f64 / self.height as f64;
 
-        let x_range = (self.x_scale_max - self.x_scale_min).abs();
-        let y_range = (self.y_scale_max - self.y_scale_min).abs();
+        let x_range = self.x_range();
+        let y_range = self.y_range();
 
         let new_x_range_diff = (x_ratio * x_range) - x_range;
         let new_y_range_diff = (y_ratio * y_range) - y_range;
@@ -70,6 +78,40 @@ impl MandelbrotSet {
         self.width = width;
         self.height = height;
         self.frame_buffer = vec![0xff as u8; width * height * 4];
+        self.redraw = true;
+    }
+
+    pub(crate) fn zoom(&mut self, coords: (f32, f32), _factor: f32) {
+        let x_range = self.x_range();
+        let y_range = self.y_range();
+
+        let midpoint_x = x_range / 2.0 + self.x_scale_min;
+        let midpoint_y = y_range / 2.0 + self.y_scale_min;
+
+        let new_midpoint_x = normalize(
+            coords.0 as f64,
+            0.0,
+            self.width as f64,
+            self.x_scale_min,
+            self.x_scale_max,
+        );
+        let new_midpoint_y = normalize(
+            coords.1 as f64,
+            0.0,
+            self.height as f64,
+            self.y_scale_min,
+            self.y_scale_max,
+        );
+
+        let x_midpoint_delta = midpoint_x - new_midpoint_x;
+        let y_midpoint_delta = midpoint_y - new_midpoint_y;
+
+        self.x_scale_min -= x_midpoint_delta;
+        self.x_scale_max -= x_midpoint_delta;
+
+        self.y_scale_min -= y_midpoint_delta;
+        self.y_scale_max -= y_midpoint_delta;
+
         self.redraw = true;
     }
 
@@ -97,8 +139,6 @@ impl MandelbrotSet {
         //  +1 sized array than If we initialized it with just self.max_iterations and had to
         //  perform a -1 offset to query from the zero-indexed array (0..self.max_iterations - 1).
         let mut historgram: Vec<u32> = vec![0; (self.max_iterations + 1) as usize];
-        // Counts the total iterations
-        let mut total: u32 = 0;
 
         for (y, row) in iteration_counts.iter_mut().enumerate() {
             for (x, val) in row.iter_mut().enumerate() {
@@ -118,7 +158,8 @@ impl MandelbrotSet {
             }
         }
 
-        total = historgram.iter().sum();
+        // Counts the total iterations
+        let total: u32 = historgram.iter().sum();
 
         for (i, pixel) in self.frame_buffer.chunks_exact_mut(4).enumerate() {
             let x = i % self.width as usize;

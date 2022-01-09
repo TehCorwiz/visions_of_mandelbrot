@@ -4,7 +4,7 @@
 mod mandelbrot;
 
 use log::error;
-use pixels::{Pixels, PixelsBuilder, SurfaceTexture};
+use pixels::{PixelsBuilder, SurfaceTexture};
 use std::rc::Rc;
 use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
@@ -122,6 +122,12 @@ async fn run() {
             if input.key_pressed(VirtualKeyCode::Escape) || input.quit() {
                 *control_flow = ControlFlow::Exit;
                 return;
+            } else if input.mouse_pressed(0) { // Left mouse
+                mandelbrot_set.zoom(input.mouse().unwrap(), 2.0);
+                dbg!("{}", input.mouse());
+            } else if input.mouse_pressed(1) { // Right mouse
+                mandelbrot_set.zoom(input.mouse().unwrap(), 0.5);
+                dbg!("{}", input.mouse());
             }
 
             // Resize the window

@@ -13,7 +13,7 @@ as my main reference for implementation hints and optimization strategies.
 - [X] Basic bulb
 - [X] Color
 - [ ] Zoom
-- [ ] Retargeting
+- [X] Retargeting
 - [ ] Split render from screen drawing
 - [ ] UI
 - [ ] Preset or custom palettes
