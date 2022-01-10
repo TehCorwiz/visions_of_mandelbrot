@@ -14,7 +14,7 @@ pub(crate) struct MandelbrotSet {
     y_scale_min: f64,
     y_scale_max: f64,
     frame_buffer: Vec<u8>,
-    palette: Vec<[u8; 4]>,
+    palette: Gradient<LinSrgb>,
     redraw: bool,
     drawing: bool,
 }
@@ -167,15 +167,21 @@ impl MandelbrotSet {
             let rgba: [u8; 4] = if iteration_counts[y][x] == self.max_iterations {
                 [0, 0, 0, 0xff]
             } else {
-                let mut shade: f64 = 0.0;
+                let mut shade: f32 = 0.0;
 
                 // histogram[0] is always = 0;
                 assert!(historgram.len() >= iteration_counts[y][x] as usize);
                 for n in 1..iteration_counts[y][x] {
-                    shade += historgram[n as usize] as f64 / total as f64;
+                    shade += (historgram[n as usize] as f64 / total as f64) as f32;
                 }
 
-                self.palette[(shade * self.palette.len() as f64) as usize]
+                let color = self.palette.get(shade);
+                [
+                    (color.red * 255.0) as u8,
+                    (color.green * 255.0) as u8,
+                    (color.blue * 255.0) as u8,
+                    0xff,
+                ]
             };
 
             pixel.copy_from_slice(&rgba);
@@ -184,10 +190,10 @@ impl MandelbrotSet {
         self.drawing = false;
     }
 
-    fn random_palette() -> Vec<[u8; 4]> {
+    fn random_palette() -> Gradient<LinSrgb> {
         let mut rng = rand::thread_rng();
 
-        let gradient: Vec<LinSrgb> = Gradient::from([
+        Gradient::from(vec![
             (
                 0.0,
                 LinSrgb::new(
@@ -212,19 +218,7 @@ impl MandelbrotSet {
                     rng.gen_range(0.0..1.0),
                 ),
             ),
-        ]).take(256).collect();
-
-        let mut palette = vec![[0; 4]; 256];
-        for (i, color) in gradient.iter().enumerate() {
-            palette[i] = [
-                (color.red * 0xff as f32) as u8,
-                (color.green * 0xff as f32) as u8,
-                (color.blue * 0xff as f32) as u8,
-                0xff,
-            ]
-        }
-
-        palette
+        ])
     }
 
     // Returns the number of iterations to diverge.
