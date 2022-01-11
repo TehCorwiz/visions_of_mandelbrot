@@ -10,10 +10,22 @@
             margin: 0;
             overflow: hidden;
         }
+
+        #instructions {
+            background-color: rgba(128,128,128,0.5);
+            position: absolute;
+        }
     </style>
     <title>Visions of Mandelbrot</title>
 </head>
 <body>
+<div id="instructions">
+    <p>Left click to zoom in.</p>
+    <p>Right click to zoom out.</p>
+    <p>Pressing `p` will rotate the palette.</p>
+    <p>Please be patient, it's not realtime yet. :)</p>
+    <p>TODO: Touch controls for mobile.</p>
+</div>
 <script type="module">
     import init from "./visions_of_mandelbrot.js";
 
