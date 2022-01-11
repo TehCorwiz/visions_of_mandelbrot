@@ -108,7 +108,7 @@ async fn run() {
             mandelbrot_set.draw(pixels.get_frame());
             if pixels
                 .render()
-                .map_err(|e| error!("pixels.render() failed: {}", e))
+                .map_err(|e| error!("pixels.render() failed: {:?}", e))
                 .is_err()
             {
                 *control_flow = ControlFlow::Exit;
