@@ -233,7 +233,13 @@ impl MandelbrotSet {
         y_scale_min: f64,
         y_scale_max: f64,
     ) -> u32 {
-        let x0 = normalize(px as f64, 0.0, (width - 1) as f64, x_scale_min, x_scale_max);
+        let x0 = normalize(
+            px as f64,
+            0.0,
+            (width - 1) as f64,
+            x_scale_min,
+            x_scale_max,
+        );
 
         let y0 = normalize(
             py as f64,
@@ -250,6 +256,15 @@ impl MandelbrotSet {
 
         let mut iteration: u32 = 0;
 
+        // Cardioid checking
+        let p = ((x0 - 0.25).powf(2.0) + y0.powf(2.0)).sqrt();
+        if x0 <= p - 2.0 * p.powf(2.0) + 0.25 {
+            return max_iterations; // Large cardioid
+        } else if (x0 + 1.0).powf(2.0) + y0.powf(2.0) <= 1.0 / 16.0 {
+            return max_iterations; // Period-2 bulb
+        }
+
+        // Escape algorithm
         while ((x.powf(2.0) + y.powf(2.0)) <= 4.0) && iteration < max_iterations {
             y = 2.0 * x * y + y0;
             x = x2 - y2 + x0;
