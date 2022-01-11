@@ -8,7 +8,7 @@ fn normalize(n: f64, r_min: f64, r_max: f64, t_min: f64, t_max: f64) -> f64 {
 pub(crate) struct MandelbrotSet {
     width: usize,
     height: usize,
-    max_iterations: u32,
+    max_iterations: f64,
     x_scale_min: f64,
     x_scale_max: f64,
     y_scale_min: f64,
@@ -24,7 +24,7 @@ impl MandelbrotSet {
         Self {
             width,
             height,
-            max_iterations: 1000,
+            max_iterations: 1000.0,
             x_scale_min: -2.00,
             x_scale_max: 0.47,
             y_scale_min: -1.12,
@@ -132,12 +132,7 @@ impl MandelbrotSet {
         self.drawing = true;
 
         // Counts the number of iterations in each pixel location.
-        let mut iteration_counts: Vec<Vec<u32>> = vec![vec![0; self.width]; self.height];
-        // Counts the frequency of each iteration count.
-        //  Iteration counts range from 1 to `self.max_iterations` and it's simpler to just have a
-        //  +1 sized array than If we initialized it with just self.max_iterations and had to
-        //  perform a -1 offset to query from the zero-indexed array (0..self.max_iterations - 1).
-        let mut historgram: Vec<u32> = vec![0; (self.max_iterations + 1) as usize];
+        let mut iteration_counts: Vec<Vec<f64>> = vec![vec![0.0; self.width]; self.height];
 
         for (y, row) in iteration_counts.iter_mut().enumerate() {
             for (x, val) in row.iter_mut().enumerate() {
@@ -152,30 +147,24 @@ impl MandelbrotSet {
                     self.y_scale_min,
                     self.y_scale_max,
                 );
-
-                historgram[*val as usize] += 1;
             }
         }
-
-        // Counts the total iterations
-        let total: u32 = historgram.iter().sum();
 
         for (i, pixel) in self.frame_buffer.chunks_exact_mut(4).enumerate() {
             let x = i % self.width as usize;
             let y = i / self.width as usize;
 
-            let rgba: [u8; 4] = if iteration_counts[y][x] == self.max_iterations {
+            let rgba: [u8; 4] = if iteration_counts[y][x] == self.max_iterations as f64 {
                 [0, 0, 0, 0xff]
             } else {
-                let mut shade: f32 = 0.0;
+                let iterations = iteration_counts[y][x].floor();
+                let fraction = iteration_counts[y][x] % 1.0;
+                let gradient = Gradient::from([
+                    (0.0, self.palette.get((iterations / self.max_iterations) as f32)),
+                    (1.0, self.palette.get(((iterations + 1.0) / self.max_iterations) as f32)),
+                ]);
 
-                // histogram[0] is always = 0;
-                assert!(historgram.len() >= iteration_counts[y][x] as usize);
-                for n in 1..iteration_counts[y][x] {
-                    shade += (historgram[n as usize] as f64 / total as f64) as f32;
-                }
-
-                let color = self.palette.get(shade);
+                let color = gradient.get(fraction as f32);
                 [
                     (color.red * 255.0) as u8,
                     (color.green * 255.0) as u8,
@@ -227,12 +216,12 @@ impl MandelbrotSet {
         py: u32,
         width: usize,
         height: usize,
-        max_iterations: u32,
+        max_iterations: f64,
         x_scale_min: f64,
         x_scale_max: f64,
         y_scale_min: f64,
         y_scale_max: f64,
-    ) -> u32 {
+    ) -> f64 {
         let x0 = normalize(
             px as f64,
             0.0,
@@ -254,7 +243,7 @@ impl MandelbrotSet {
         let mut x2: f64 = 0.0;
         let mut y2: f64 = 0.0;
 
-        let mut iteration: u32 = 0;
+        let mut iteration = 0.0;
 
         // Cardioid checking
         let p = ((x0 - 0.25).powf(2.0) + y0.powf(2.0)).sqrt();
@@ -264,6 +253,10 @@ impl MandelbrotSet {
             return max_iterations; // Period-2 bulb
         }
 
+        let mut x_old = 0.0;
+        let mut y_old = 0.0;
+        let mut period = 0;
+
         // Escape algorithm
         while ((x.powf(2.0) + y.powf(2.0)) <= 4.0) && iteration < max_iterations {
             y = 2.0 * x * y + y0;
@@ -271,7 +264,25 @@ impl MandelbrotSet {
             x2 = x.powf(2.0);
             y2 = y.powf(2.0);
 
-            iteration += 1;
+            iteration += 1.0;
+
+            // Periodicity checking
+            if x == x_old && y == y_old {
+                return max_iterations;
+            }
+
+            period += 1;
+            if period > 20 {
+                period = 0;
+                x_old = x;
+                y_old = y;
+            }
+        }
+
+        if iteration < max_iterations {
+            let log_zn = (x.powf(2.0) + y.powf(2.0)).log10();
+            let nu = (log_zn / 2.0_f64.log10()).log10() / 2.0_f64.log10();
+            iteration = iteration + 1.0 - nu;
         }
 
         iteration
