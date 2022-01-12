@@ -30,7 +30,7 @@ impl MandelbrotSet {
             y_scale_min: -1.12,
             y_scale_max: 1.12,
             frame_buffer: vec![0xff as u8; width * height * 4],
-            palette: MandelbrotSet::random_palette(),
+            palette: MandelbrotSet::rainbow_palette(),
             redraw: true,
             drawing: false,
         }
@@ -157,7 +157,7 @@ impl MandelbrotSet {
             let x = i % self.width as usize;
             let y = i / self.width as usize;
 
-            let rgba: [u8; 4] = if iteration_counts[y][x] == self.max_iterations as f64 {
+            let rgba: [u8; 4] = if iteration_counts[y][x] == self.max_iterations {
                 [0, 0, 0, 0xff]
             } else {
                 let iterations = iteration_counts[y][x].floor();
@@ -210,6 +210,16 @@ impl MandelbrotSet {
                     rng.gen_range(0.0..1.0),
                 ),
             ),
+        ])
+    }
+
+    fn rainbow_palette() -> Gradient<LinSrgb> {
+        // let mut rng = rand::thread_rng();
+
+        Gradient::from(vec![
+            (0.0, LinSrgb::new(1.0, 0.0, 0.0)),
+            (0.5, LinSrgb::new(0.0, 1.0, 0.0)),
+            (1.0, LinSrgb::new(0.0, 0.0, 1.0)),
         ])
     }
 
@@ -284,8 +294,8 @@ impl MandelbrotSet {
 
         if iteration < *max_iterations {
             let log_zn = (x2 + y2).log10();
-
-            let nu = (log_zn / 2.0_f64.log10()).log10() / 2.0_f64.log10();
+            let log_2 = 2.0_f64.log10();
+            let nu = (log_zn / log_2).log10() / log_2;
             iteration = iteration + 1.0 - nu;
         }
 
