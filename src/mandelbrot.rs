@@ -1,7 +1,7 @@
 use palette::{Gradient, LinSrgb};
 use rand::Rng;
 
-fn normalize(n: f64, r_min: f64, r_max: f64, t_min: f64, t_max: f64) -> f64 {
+fn normalize(n: &f64, r_min: &f64, r_max: &f64, t_min: &f64, t_max: &f64) -> f64 {
     (((n - r_min) / (r_max - r_min)) * (t_max - t_min)) + t_min
 }
 
@@ -91,18 +91,18 @@ impl MandelbrotSet {
         let new_y_range = y_range * factor;
 
         let new_midpoint_x = normalize(
-            coords.0 as f64,
-            0.0,
-            self.width as f64,
-            self.x_scale_min,
-            self.x_scale_max,
+            &(coords.0 as f64),
+            &0.0,
+            &(self.width as f64),
+            &self.x_scale_min,
+            &self.x_scale_max,
         );
         let new_midpoint_y = normalize(
-            coords.1 as f64,
-            0.0,
-            self.height as f64,
-            self.y_scale_min,
-            self.y_scale_max,
+            &(coords.1 as f64),
+            &0.0,
+            &(self.height as f64),
+            &self.y_scale_min,
+            &self.y_scale_max,
         );
 
         self.x_scale_min = new_midpoint_x - (new_x_range / 2.0);
@@ -136,16 +136,19 @@ impl MandelbrotSet {
 
         for (y, row) in iteration_counts.iter_mut().enumerate() {
             for (x, val) in row.iter_mut().enumerate() {
+                let x = x as u32;
+                let y = y as u32;
+
                 *val = MandelbrotSet::test_pixel(
-                    x as u32,
-                    y as u32,
-                    self.width,
-                    self.height,
-                    self.max_iterations,
-                    self.x_scale_min,
-                    self.x_scale_max,
-                    self.y_scale_min,
-                    self.y_scale_max,
+                    &x,
+                    &y,
+                    &self.width,
+                    &self.height,
+                    &self.max_iterations,
+                    &self.x_scale_min,
+                    &self.x_scale_max,
+                    &self.y_scale_min,
+                    &self.y_scale_max,
                 );
             }
         }
@@ -212,28 +215,28 @@ impl MandelbrotSet {
 
     // Returns the number of iterations to diverge.
     fn test_pixel(
-        px: u32,
-        py: u32,
-        width: usize,
-        height: usize,
-        max_iterations: f64,
-        x_scale_min: f64,
-        x_scale_max: f64,
-        y_scale_min: f64,
-        y_scale_max: f64,
+        px: &u32,
+        py: &u32,
+        width: &usize,
+        height: &usize,
+        max_iterations: &f64,
+        x_scale_min: &f64,
+        x_scale_max: &f64,
+        y_scale_min: &f64,
+        y_scale_max: &f64,
     ) -> f64 {
         let x0 = normalize(
-            px as f64,
-            0.0,
-            (width - 1) as f64,
+            &(*px as f64),
+            &0.0,
+            &((width - 1) as f64),
             x_scale_min,
             x_scale_max,
         );
 
         let y0 = normalize(
-            py as f64,
-            0.0,
-            (height - 1) as f64,
+            &(*py as f64),
+            &0.0,
+            &((height - 1) as f64),
             y_scale_min,
             y_scale_max,
         );
@@ -248,9 +251,9 @@ impl MandelbrotSet {
         // Cardioid checking
         let p = ((x0 - 0.25).powf(2.0) + y0.powf(2.0)).sqrt();
         if x0 <= p - 2.0 * p.powf(2.0) + 0.25 {
-            return max_iterations; // Large cardioid
+            return *max_iterations; // Large cardioid
         } else if (x0 + 1.0).powf(2.0) + y0.powf(2.0) <= 1.0 / 16.0 {
-            return max_iterations; // Period-2 bulb
+            return *max_iterations; // Period-2 bulb
         }
 
         let mut x_old = 0.0;
@@ -258,7 +261,7 @@ impl MandelbrotSet {
         let mut period = 0;
 
         // Escape algorithm
-        while ((x.powf(2.0) + y.powf(2.0)) <= 4.0) && iteration < max_iterations {
+        while ((x2 + y2) <= 4.0) && iteration < *max_iterations {
             y = 2.0 * x * y + y0;
             x = x2 - y2 + x0;
             x2 = x.powf(2.0);
@@ -268,7 +271,7 @@ impl MandelbrotSet {
 
             // Periodicity checking
             if x == x_old && y == y_old {
-                return max_iterations;
+                return *max_iterations;
             }
 
             period += 1;
@@ -279,8 +282,9 @@ impl MandelbrotSet {
             }
         }
 
-        if iteration < max_iterations {
-            let log_zn = (x.powf(2.0) + y.powf(2.0)).log10();
+        if iteration < *max_iterations {
+            let log_zn = (x2 + y2).log10();
+
             let nu = (log_zn / 2.0_f64.log10()).log10() / 2.0_f64.log10();
             iteration = iteration + 1.0 - nu;
         }
