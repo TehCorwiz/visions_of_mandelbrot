@@ -25,6 +25,7 @@ as my main reference for implementation hints and optimization strategies.
 - [ ] Split render from screen drawing
 - [ ] UI
 - [ ] Preset or custom palettes
+- [ ] Bookmarks
 
 ## Dev env setup
 

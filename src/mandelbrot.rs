@@ -208,11 +208,11 @@ impl MandelbrotSet {
 
     fn rainbow_palette(n_colors: usize) -> Vec<LinSrgb> {
         Gradient::from(vec![
-            (1.0, LinSrgb::new(1.0, 0.0, 0.0)),
-            (2.0, LinSrgb::new(0.0, 1.0, 0.0)),
-            (3.0, LinSrgb::new(0.0, 0.0, 1.0)),
-            (4.0, LinSrgb::new(0.0, 1.0, 0.0)),
-            (5.0, LinSrgb::new(1.0, 0.0, 0.0)),
+            (0.0, LinSrgb::new(1.0, 0.0, 0.0)),
+            (0.05, LinSrgb::new(0.0, 1.0, 0.0)),
+            (0.5, LinSrgb::new(0.0, 0.0, 1.0)),
+            (1.5, LinSrgb::new(0.0, 1.0, 0.0)),
+            (2.5, LinSrgb::new(1.0, 0.0, 0.0)),
         ]).take(n_colors).collect()
     }
 
