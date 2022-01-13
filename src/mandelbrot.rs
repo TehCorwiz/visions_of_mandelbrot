@@ -13,24 +13,30 @@ pub(crate) struct MandelbrotSet {
     x_scale_max: f64,
     y_scale_min: f64,
     y_scale_max: f64,
+    iteration_counts: Vec<Vec<f64>>,
     frame_buffer: Vec<u8>,
-    palette: Gradient<LinSrgb>,
+    palette: Vec<LinSrgb>,
+    recalculate: bool,
     redraw: bool,
     drawing: bool,
 }
 
 impl MandelbrotSet {
     pub(crate) fn new(width: usize, height: usize) -> MandelbrotSet {
+        let max_iterations = 1000.0;
+
         Self {
             width,
             height,
-            max_iterations: 1000.0,
+            max_iterations,
             x_scale_min: -2.00,
             x_scale_max: 0.47,
             y_scale_min: -1.12,
             y_scale_max: 1.12,
+            iteration_counts: vec![vec![0.0; width]; height],
             frame_buffer: vec![0xff as u8; width * height * 4],
-            palette: MandelbrotSet::rainbow_palette(),
+            palette: MandelbrotSet::rainbow_palette(max_iterations as usize),
+            recalculate: true,
             redraw: true,
             drawing: false,
         }
@@ -41,7 +47,7 @@ impl MandelbrotSet {
     }
 
     pub(crate) fn randomize_palette(&mut self) {
-        self.palette = MandelbrotSet::random_palette();
+        self.palette = MandelbrotSet::random_palette(self.max_iterations as usize);
         self.redraw = true;
     }
 
@@ -80,6 +86,7 @@ impl MandelbrotSet {
         self.width = width;
         self.height = height;
         self.frame_buffer = vec![0xff as u8; width * height * 4];
+        self.recalculate = true;
         self.redraw = true;
     }
 
@@ -111,116 +118,111 @@ impl MandelbrotSet {
         self.y_scale_min = new_midpoint_y - (new_y_range / 2.0);
         self.y_scale_max = new_midpoint_y + (new_y_range / 2.0);
 
+        self.recalculate = true;
         self.redraw = true;
     }
 
     /// Assumes the default texture format: `wgpu::TextureFormat::Rgba8UnormSrgb`
     pub(crate) fn draw(&mut self, frame: &mut [u8]) {
-        if self.redraw && !self.drawing {
-            self.redraw = false;
+        self.drawing = true;
 
+        if self.recalculate {
+            self.recalculate = false;
+
+            // Counts the number of iterations in each pixel location.
+            self.iteration_counts = vec![vec![0.0; self.width]; self.height];
+
+            for (y, row) in self.iteration_counts.iter_mut().enumerate() {
+                for (x, val) in row.iter_mut().enumerate() {
+                    let x = x as u32;
+                    let y = y as u32;
+
+                    *val = MandelbrotSet::test_pixel(
+                        &x,
+                        &y,
+                        &self.width,
+                        &self.height,
+                        &self.max_iterations,
+                        &self.x_scale_min,
+                        &self.x_scale_max,
+                        &self.y_scale_min,
+                        &self.y_scale_max,
+                    );
+                }
+            }
+        }
+
+        if self.redraw {
+            self.redraw = false;
             self.draw_to_frame_buffer();
         }
 
         frame.copy_from_slice(&self.frame_buffer);
+
+        self.drawing = false;
     }
 
     // The problem I'm going to have is that at higher zoom levels the x and y scale values will get
     //  too small. I'll effectively hit the float resolution limit. Maybe use a library to provide
     //  arbitrary resolution numbers?
     fn draw_to_frame_buffer(&mut self) {
-        self.drawing = true;
-
-        // Counts the number of iterations in each pixel location.
-        let mut iteration_counts: Vec<Vec<f64>> = vec![vec![0.0; self.width]; self.height];
-
-        for (y, row) in iteration_counts.iter_mut().enumerate() {
-            for (x, val) in row.iter_mut().enumerate() {
-                let x = x as u32;
-                let y = y as u32;
-
-                *val = MandelbrotSet::test_pixel(
-                    &x,
-                    &y,
-                    &self.width,
-                    &self.height,
-                    &self.max_iterations,
-                    &self.x_scale_min,
-                    &self.x_scale_max,
-                    &self.y_scale_min,
-                    &self.y_scale_max,
-                );
-            }
-        }
-
         for (i, pixel) in self.frame_buffer.chunks_exact_mut(4).enumerate() {
             let x = i % self.width as usize;
             let y = i / self.width as usize;
 
-            let rgba: [u8; 4] = if iteration_counts[y][x] == self.max_iterations {
+            let rgba: [u8; 4] = if self.iteration_counts[y][x] == self.max_iterations {
                 [0, 0, 0, 0xff]
             } else {
-                let iterations = iteration_counts[y][x].floor();
-                let fraction = iteration_counts[y][x] % 1.0;
-                let gradient = Gradient::from([
-                    (0.0, self.palette.get((iterations / self.max_iterations) as f32)),
-                    (1.0, self.palette.get(((iterations + 1.0) / self.max_iterations) as f32)),
-                ]);
+                let iterations: usize = self.iteration_counts[y][x].floor() as usize;
+                let fraction = self.iteration_counts[y][x] % 1.0;
 
-                let color = gradient.get(fraction as f32);
-                [
-                    (color.red * 255.0) as u8,
-                    (color.green * 255.0) as u8,
-                    (color.blue * 255.0) as u8,
-                    0xff,
-                ]
+                let color1 = self.palette[iterations];
+                let color2 = self.palette[iterations + 1];
+
+                MandelbrotSet::color_to_rgba(&Gradient::from([
+                    (0.0, color1),
+                    (1.0, color2)
+                ]).get(fraction as f32))
             };
 
             pixel.copy_from_slice(&rgba);
         }
-
-        self.drawing = false;
     }
 
-    fn random_palette() -> Gradient<LinSrgb> {
+    fn random_palette(n_colors: usize) -> Vec<LinSrgb> {
         let mut rng = rand::thread_rng();
+        let mut pool: Vec<f32> = vec![0.0; 15];
+        for i in 1..15 {
+            assert!(i < pool.len());
+            pool[i] = rng.gen_range(0.0..1.0)
+        }
 
         Gradient::from(vec![
-            (
-                0.0,
-                LinSrgb::new(
-                    rng.gen_range(0.0..1.0),
-                    rng.gen_range(0.0..1.0),
-                    rng.gen_range(0.0..1.0),
-                ),
-            ),
-            (
-                0.5,
-                LinSrgb::new(
-                    rng.gen_range(0.0..1.0),
-                    rng.gen_range(0.0..1.0),
-                    rng.gen_range(0.0..1.0),
-                ),
-            ),
-            (
-                1.0,
-                LinSrgb::new(
-                    rng.gen_range(0.0..1.0),
-                    rng.gen_range(0.0..1.0),
-                    rng.gen_range(0.0..1.0),
-                ),
-            ),
-        ])
+            (0.0, LinSrgb::new(pool.pop().unwrap(), pool.pop().unwrap(), pool.pop().unwrap())),
+            (0.1, LinSrgb::new(pool.pop().unwrap(), pool.pop().unwrap(), pool.pop().unwrap())),
+            (2.5, LinSrgb::new(pool.pop().unwrap(), pool.pop().unwrap(), pool.pop().unwrap())),
+            (6.0, LinSrgb::new(pool.pop().unwrap(), pool.pop().unwrap(), pool.pop().unwrap())),
+            (10.0, LinSrgb::new(pool.pop().unwrap(), pool.pop().unwrap(), pool.pop().unwrap())),
+        ]).take(n_colors).collect()
     }
 
-    fn rainbow_palette() -> Gradient<LinSrgb> {
-        // let mut rng = rand::thread_rng();
-
+    fn rainbow_palette(n_colors: usize) -> Vec<LinSrgb> {
         Gradient::from(vec![
-            (0.0, LinSrgb::new(1.0, 0.0, 0.0)),
-            (0.5, LinSrgb::new(0.0, 1.0, 0.0)),
-            (1.0, LinSrgb::new(0.0, 0.0, 1.0)),
-        ])
+            (1.0, LinSrgb::new(1.0, 0.0, 0.0)),
+            (2.0, LinSrgb::new(0.0, 1.0, 0.0)),
+            (3.0, LinSrgb::new(0.0, 0.0, 1.0)),
+            (4.0, LinSrgb::new(0.0, 1.0, 0.0)),
+            (5.0, LinSrgb::new(1.0, 0.0, 0.0)),
+        ]).take(n_colors).collect()
+    }
+
+    fn color_to_rgba(color: &LinSrgb) -> [u8; 4] {
+        [
+            (color.red * 0xff as f32) as u8,
+            (color.green * 0xff as f32) as u8,
+            (color.blue * 0xff as f32) as u8,
+            0xff,
+        ]
     }
 
     // Returns the number of iterations to diverge.
