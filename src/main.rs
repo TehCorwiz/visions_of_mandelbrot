@@ -100,7 +100,7 @@ async fn run() {
             .await
             .expect("Pixels error")
     };
-    let mut mandelbrot_set = MandelbrotSet::new(WIDTH as usize, HEIGHT as usize);
+    let mut mandelbrot_set =  Box::new(MandelbrotSet::new(WIDTH as usize, HEIGHT as usize));
 
     event_loop.run(move |event, _, control_flow| {
         // Draw the current frame
@@ -140,7 +140,7 @@ async fn run() {
 
             // Reset events
             if input.key_pressed(VirtualKeyCode::R) {
-                mandelbrot_set = MandelbrotSet::new(WIDTH as usize, HEIGHT as usize);
+                mandelbrot_set =  Box::new(MandelbrotSet::new(WIDTH as usize, HEIGHT as usize));
             }
 
             // Resize the window
