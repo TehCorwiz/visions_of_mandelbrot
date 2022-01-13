@@ -138,6 +138,11 @@ async fn run() {
                 mandelbrot_set.randomize_palette();
             }
 
+            // Reset events
+            if input.key_pressed(VirtualKeyCode::R) {
+                mandelbrot_set = MandelbrotSet::new(WIDTH as usize, HEIGHT as usize);
+            }
+
             // Resize the window
             if let Some(size) = input.window_resized() {
                 pixels.resize_surface(size.width, size.height);
