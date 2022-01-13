@@ -261,10 +261,11 @@ impl MandelbrotSet {
         let mut iteration = 0.0;
 
         // Cardioid checking
-        let p = ((x0 - 0.25).powf(2.0) + y0.powf(2.0)).sqrt();
-        if x0 <= p - 2.0 * p.powf(2.0) + 0.25 {
+        let y0_2 = y0 * y0;
+        let p = ((x0 - 0.25).powf(2.0) + y0_2).sqrt();
+        if x0 <= p - 2.0 * p * p + 0.25 {
             return *max_iterations; // Large cardioid
-        } else if (x0 + 1.0).powf(2.0) + y0.powf(2.0) <= 1.0 / 16.0 {
+        } else if (x0 + 1.0).powf(2.0) + y0_2 <= 1.0 / 16.0 {
             return *max_iterations; // Period-2 bulb
         }
 
@@ -276,8 +277,8 @@ impl MandelbrotSet {
         while ((x2 + y2) <= 4.0) && iteration < *max_iterations {
             y = 2.0 * x * y + y0;
             x = x2 - y2 + x0;
-            x2 = x.powf(2.0);
-            y2 = y.powf(2.0);
+            x2 = x * x;
+            y2 = y * y;
 
             iteration += 1.0;
 
