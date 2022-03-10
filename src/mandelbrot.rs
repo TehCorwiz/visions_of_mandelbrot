@@ -65,11 +65,11 @@ impl MandelbrotGenerator {
         let new_x_range_diff = (x_ratio * x_range) - x_range;
         let new_y_range_diff = (y_ratio * y_range) - y_range;
 
-        self.x_scale_min = self.x_scale_min - new_x_range_diff / 2.0;
-        self.x_scale_max = self.x_scale_max + new_x_range_diff / 2.0;
+        self.x_scale_min -= new_x_range_diff / 2.0;
+        self.x_scale_max += new_x_range_diff / 2.0;
 
-        self.y_scale_min = self.y_scale_min - new_y_range_diff / 2.0;
-        self.y_scale_max = self.y_scale_max + new_y_range_diff / 2.0;
+        self.y_scale_min -= new_y_range_diff / 2.0;
+        self.y_scale_max += new_y_range_diff / 2.0;
     }
 
     pub(crate) fn zoom(&mut self, coords: (f32, f32), factor: f64) {
@@ -134,10 +134,12 @@ impl MandelbrotGenerator {
         // Cardioid checking
         let y0_2 = y0 * y0;
         let p = ((x0 - 0.25).powf(2.0) + y0_2).sqrt();
-        if x0 <= p - 2.0 * p * p + 0.25 {
-            return self.max_iterations; // Large cardioid
-        } else if (x0 + 1.0).powf(2.0) + y0_2 <= 1.0 / 16.0 {
-            return self.max_iterations; // Period-2 bulb
+
+        let is_large_cardioid = x0 <= p - 2.0 * p * p + 0.25;
+        let is_period_2_bulb = (x0 + 1.0).powf(2.0) + y0_2 <= 1.0 / 16.0;
+
+        if is_large_cardioid || is_period_2_bulb {
+            return self.max_iterations;
         }
 
         let mut x_old = 0.0;
@@ -201,7 +203,7 @@ impl Iterator for MandelbrotGenerator {
             self.recalculate = false;
         }
 
-        return Some(self.iteration_counts[y][x]);
+        Some(self.iteration_counts[y][x])
     }
 }
 
@@ -222,7 +224,7 @@ impl MandelbrotRenderer {
             height,
             palette: MandelbrotRenderer::rainbow_palette(MandelbrotGenerator::DEFAULT_MAX_ITERATIONS as usize),
             redraw: true,
-            frame_buffer: vec![0xff as u8; width * height * 4],
+            frame_buffer: vec![0xffu8; width * height * 4],
         }
     }
 
@@ -267,7 +269,7 @@ impl MandelbrotRenderer {
     pub(crate) fn resize(&mut self, width: usize, height: usize) {
         self.width = width;
         self.height = height;
-        self.frame_buffer = vec![0xff as u8; width * height * 4];
+        self.frame_buffer = vec![0xffu8; width * height * 4];
         self.generator.resize(width, height);
         self.redraw = true;
     }
